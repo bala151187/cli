@@ -3,6 +3,7 @@ package v6_test
 import (
 	"errors"
 
+	"code.cloudfoundry.org/cli/actor/v3action"
 	"code.cloudfoundry.org/cli/api/uaa"
 	"code.cloudfoundry.org/cli/api/uaa/constant"
 	"code.cloudfoundry.org/cli/cf/configuration/coreconfig"
@@ -679,6 +680,92 @@ var _ = Describe("login Command", func() {
 						Expect(testUI.Err).To(Say("Cloud Foundry API version 2.123.0 requires CLI version 9000.0.0. You are currently on version 1.2.3. To upgrade your CLI, please visit: https://github.com/cloudfoundry/cli#downloads"))
 						Expect(testUI.Out).To(Say(`API endpoint:\s+%s`, cmd.APIEndpoint))
 						Expect(testUI.Out).To(Say(`Not logged in. Use 'faceman login' to log in.`))
+					})
+				})
+			})
+		})
+
+		Describe("Targeting Org and Space", func() {
+			BeforeEach(func() {
+				cmd.APIEndpoint = "example.com"
+				cmd.Username = "some-user"
+				cmd.Password = "some-password"
+			})
+
+			When("-o was passed", func() {
+				BeforeEach(func() {
+					cmd.Organization = "some-org"
+				})
+
+				It("fetches the specified organization", func() {
+					Expect(fakeActor.GetOrganizationByNameCallCount()).To(Equal(1))
+					Expect(fakeActor.GetOrganizationByNameArgsForCall(0)).To(Equal("some-org"))
+				})
+
+				When("fetching the organization succeeds", func() {
+					BeforeEach(func() {
+						fakeActor.GetOrganizationByNameReturns(
+							v3action.Organization{Name: "some-org", GUID: "some-guid"},
+							v3action.Warnings{"some-warning-1", "some-warning-2"},
+							nil)
+					})
+
+					It("prints all warnings", func() {
+						Expect(testUI.Err).To(Say("some-warning-1"))
+						Expect(testUI.Err).To(Say("some-warning-2"))
+					})
+
+					It("sets the targeted organization in the config", func() {
+						Expect(fakeConfig.SetOrganizationInformationCallCount()).To(Equal(1))
+						orgGUID, orgName := fakeConfig.SetOrganizationInformationArgsForCall(0)
+						Expect(orgGUID).To(Equal("some-guid"))
+						Expect(orgName).To(Equal("some-org"))
+					})
+				})
+			})
+
+			When("-o was not passed", func() {
+				BeforeEach(func() {
+					cmd.APIEndpoint = "example.com"
+					cmd.Username = "some-user"
+					cmd.Password = "some-password"
+				})
+
+				It("fetches the available organizations", func() {
+					Expect(executeErr).ToNot(HaveOccurred())
+				})
+
+				It("prints all warnings", func() {
+				})
+
+				When("fetching the organizations succeeds", func() {
+					When("no org exists", func() {
+						It("displays how to target an org and space", func() {
+							Expect(executeErr).ToNot(HaveOccurred())
+
+							// Expect(testUI.Out).To(Say("api endpoint:   some-api-target"))
+							// Expect(testUI.Out).To(Say("api version:    1.2.3"))
+							// Expect(testUI.Out).To(Say("user:           some-user"))
+							// Expect(testUI.Out).To(Say("No org or space targeted, use '%s target -o ORG -s SPACE'", binaryName))
+						})
+					})
+
+					When("only one org exists", func() {
+						It("targets that org", func() {
+							Expect(executeErr).ToNot(HaveOccurred())
+						})
+					})
+
+					When("more than one org exists", func() {
+						It("targets that org", func() {
+							Expect(executeErr).ToNot(HaveOccurred())
+						})
+					})
+				})
+
+				When("fetching the organizations fails", func() {
+					It("returns the error", func() {
+						// Expect(executeErr).To(HaveOccurred())
 					})
 				})
 			})

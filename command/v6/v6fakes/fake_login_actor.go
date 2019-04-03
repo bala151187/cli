@@ -34,6 +34,21 @@ type FakeLoginActor struct {
 	getLoginPromptsReturnsOnCall map[int]struct {
 		result1 map[string]coreconfig.AuthPrompt
 	}
+	GetOrganizationByNameStub        func(string) (v3action.Organization, v3action.Warnings, error)
+	getOrganizationByNameMutex       sync.RWMutex
+	getOrganizationByNameArgsForCall []struct {
+		arg1 string
+	}
+	getOrganizationByNameReturns struct {
+		result1 v3action.Organization
+		result2 v3action.Warnings
+		result3 error
+	}
+	getOrganizationByNameReturnsOnCall map[int]struct {
+		result1 v3action.Organization
+		result2 v3action.Warnings
+		result3 error
+	}
 	SetTargetStub        func(v3action.TargetSettings) (v3action.Warnings, error)
 	setTargetMutex       sync.RWMutex
 	setTargetArgsForCall []struct {
@@ -165,6 +180,72 @@ func (fake *FakeLoginActor) GetLoginPromptsReturnsOnCall(i int, result1 map[stri
 	}{result1}
 }
 
+func (fake *FakeLoginActor) GetOrganizationByName(arg1 string) (v3action.Organization, v3action.Warnings, error) {
+	fake.getOrganizationByNameMutex.Lock()
+	ret, specificReturn := fake.getOrganizationByNameReturnsOnCall[len(fake.getOrganizationByNameArgsForCall)]
+	fake.getOrganizationByNameArgsForCall = append(fake.getOrganizationByNameArgsForCall, struct {
+		arg1 string
+	}{arg1})
+	fake.recordInvocation("GetOrganizationByName", []interface{}{arg1})
+	fake.getOrganizationByNameMutex.Unlock()
+	if fake.GetOrganizationByNameStub != nil {
+		return fake.GetOrganizationByNameStub(arg1)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2, ret.result3
+	}
+	fakeReturns := fake.getOrganizationByNameReturns
+	return fakeReturns.result1, fakeReturns.result2, fakeReturns.result3
+}
+
+func (fake *FakeLoginActor) GetOrganizationByNameCallCount() int {
+	fake.getOrganizationByNameMutex.RLock()
+	defer fake.getOrganizationByNameMutex.RUnlock()
+	return len(fake.getOrganizationByNameArgsForCall)
+}
+
+func (fake *FakeLoginActor) GetOrganizationByNameCalls(stub func(string) (v3action.Organization, v3action.Warnings, error)) {
+	fake.getOrganizationByNameMutex.Lock()
+	defer fake.getOrganizationByNameMutex.Unlock()
+	fake.GetOrganizationByNameStub = stub
+}
+
+func (fake *FakeLoginActor) GetOrganizationByNameArgsForCall(i int) string {
+	fake.getOrganizationByNameMutex.RLock()
+	defer fake.getOrganizationByNameMutex.RUnlock()
+	argsForCall := fake.getOrganizationByNameArgsForCall[i]
+	return argsForCall.arg1
+}
+
+func (fake *FakeLoginActor) GetOrganizationByNameReturns(result1 v3action.Organization, result2 v3action.Warnings, result3 error) {
+	fake.getOrganizationByNameMutex.Lock()
+	defer fake.getOrganizationByNameMutex.Unlock()
+	fake.GetOrganizationByNameStub = nil
+	fake.getOrganizationByNameReturns = struct {
+		result1 v3action.Organization
+		result2 v3action.Warnings
+		result3 error
+	}{result1, result2, result3}
+}
+
+func (fake *FakeLoginActor) GetOrganizationByNameReturnsOnCall(i int, result1 v3action.Organization, result2 v3action.Warnings, result3 error) {
+	fake.getOrganizationByNameMutex.Lock()
+	defer fake.getOrganizationByNameMutex.Unlock()
+	fake.GetOrganizationByNameStub = nil
+	if fake.getOrganizationByNameReturnsOnCall == nil {
+		fake.getOrganizationByNameReturnsOnCall = make(map[int]struct {
+			result1 v3action.Organization
+			result2 v3action.Warnings
+			result3 error
+		})
+	}
+	fake.getOrganizationByNameReturnsOnCall[i] = struct {
+		result1 v3action.Organization
+		result2 v3action.Warnings
+		result3 error
+	}{result1, result2, result3}
+}
+
 func (fake *FakeLoginActor) SetTarget(arg1 v3action.TargetSettings) (v3action.Warnings, error) {
 	fake.setTargetMutex.Lock()
 	ret, specificReturn := fake.setTargetReturnsOnCall[len(fake.setTargetArgsForCall)]
@@ -235,6 +316,8 @@ func (fake *FakeLoginActor) Invocations() map[string][][]interface{} {
 	defer fake.authenticateMutex.RUnlock()
 	fake.getLoginPromptsMutex.RLock()
 	defer fake.getLoginPromptsMutex.RUnlock()
+	fake.getOrganizationByNameMutex.RLock()
+	defer fake.getOrganizationByNameMutex.RUnlock()
 	fake.setTargetMutex.RLock()
 	defer fake.setTargetMutex.RUnlock()
 	copiedInvocations := map[string][][]interface{}{}

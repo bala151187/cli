@@ -446,6 +446,7 @@ var _ = Describe("login command", func() {
 		)
 
 		BeforeEach(func() {
+			helpers.TurnOnExperimentalLogin()
 			helpers.LoginCF()
 			orgName = helpers.NewOrgName()
 			session := helpers.CF("create-org", orgName)
@@ -453,8 +454,12 @@ var _ = Describe("login command", func() {
 			username, password = helpers.CreateUserInOrgRole(orgName, "OrgManager")
 		})
 
+		AfterEach(func() {
+			helpers.TurnOffExperimentalLogin()
+		})
+
 		When("there is only one org available to the user", func() {
-			It("logs the user in and targets the organization automatically", func() {
+			FIt("logs the user in and targets the organization automatically", func() {
 				session := helpers.CF("login", "-u", username, "-p", password, "-a", apiURL, "--skip-ssl-validation")
 				Eventually(session).Should(Exit(0))
 

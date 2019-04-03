@@ -24,6 +24,7 @@ const maxLoginTries = 3
 type LoginActor interface {
 	Authenticate(credentials map[string]string, origin string, grantType constant.GrantType) error
 	GetLoginPrompts() map[string]coreconfig.AuthPrompt
+	GetOrganizationByName(orgName string) (v3action.Organization, v3action.Warnings, error)
 	SetTarget(settings v3action.TargetSettings) (v3action.Warnings, error)
 }
 
@@ -173,6 +174,16 @@ func (cmd *LoginCommand) Execute(args []string) error {
 
 	if authErr != nil {
 		return errors.New("Unable to authenticate.")
+	}
+
+	org, warnings, err := cmd.Actor.GetOrganizationByName(cmd.Organization)
+
+	cmd.UI.DisplayWarnings(warnings)
+
+	cmd.Config.SetOrganizationInformation(org.GUID, org.Name)
+
+	if err != nil {
+		return err
 	}
 
 	err = cmd.checkMinCLIVersion()
