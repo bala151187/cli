@@ -49,6 +49,20 @@ type FakeLoginActor struct {
 		result2 v3action.Warnings
 		result3 error
 	}
+	GetOrganizationsStub        func() ([]v3action.Organization, v3action.Warnings, error)
+	getOrganizationsMutex       sync.RWMutex
+	getOrganizationsArgsForCall []struct {
+	}
+	getOrganizationsReturns struct {
+		result1 []v3action.Organization
+		result2 v3action.Warnings
+		result3 error
+	}
+	getOrganizationsReturnsOnCall map[int]struct {
+		result1 []v3action.Organization
+		result2 v3action.Warnings
+		result3 error
+	}
 	SetTargetStub        func(v3action.TargetSettings) (v3action.Warnings, error)
 	setTargetMutex       sync.RWMutex
 	setTargetArgsForCall []struct {
@@ -246,6 +260,64 @@ func (fake *FakeLoginActor) GetOrganizationByNameReturnsOnCall(i int, result1 v3
 	}{result1, result2, result3}
 }
 
+func (fake *FakeLoginActor) GetOrganizations() ([]v3action.Organization, v3action.Warnings, error) {
+	fake.getOrganizationsMutex.Lock()
+	ret, specificReturn := fake.getOrganizationsReturnsOnCall[len(fake.getOrganizationsArgsForCall)]
+	fake.getOrganizationsArgsForCall = append(fake.getOrganizationsArgsForCall, struct {
+	}{})
+	fake.recordInvocation("GetOrganizations", []interface{}{})
+	fake.getOrganizationsMutex.Unlock()
+	if fake.GetOrganizationsStub != nil {
+		return fake.GetOrganizationsStub()
+	}
+	if specificReturn {
+		return ret.result1, ret.result2, ret.result3
+	}
+	fakeReturns := fake.getOrganizationsReturns
+	return fakeReturns.result1, fakeReturns.result2, fakeReturns.result3
+}
+
+func (fake *FakeLoginActor) GetOrganizationsCallCount() int {
+	fake.getOrganizationsMutex.RLock()
+	defer fake.getOrganizationsMutex.RUnlock()
+	return len(fake.getOrganizationsArgsForCall)
+}
+
+func (fake *FakeLoginActor) GetOrganizationsCalls(stub func() ([]v3action.Organization, v3action.Warnings, error)) {
+	fake.getOrganizationsMutex.Lock()
+	defer fake.getOrganizationsMutex.Unlock()
+	fake.GetOrganizationsStub = stub
+}
+
+func (fake *FakeLoginActor) GetOrganizationsReturns(result1 []v3action.Organization, result2 v3action.Warnings, result3 error) {
+	fake.getOrganizationsMutex.Lock()
+	defer fake.getOrganizationsMutex.Unlock()
+	fake.GetOrganizationsStub = nil
+	fake.getOrganizationsReturns = struct {
+		result1 []v3action.Organization
+		result2 v3action.Warnings
+		result3 error
+	}{result1, result2, result3}
+}
+
+func (fake *FakeLoginActor) GetOrganizationsReturnsOnCall(i int, result1 []v3action.Organization, result2 v3action.Warnings, result3 error) {
+	fake.getOrganizationsMutex.Lock()
+	defer fake.getOrganizationsMutex.Unlock()
+	fake.GetOrganizationsStub = nil
+	if fake.getOrganizationsReturnsOnCall == nil {
+		fake.getOrganizationsReturnsOnCall = make(map[int]struct {
+			result1 []v3action.Organization
+			result2 v3action.Warnings
+			result3 error
+		})
+	}
+	fake.getOrganizationsReturnsOnCall[i] = struct {
+		result1 []v3action.Organization
+		result2 v3action.Warnings
+		result3 error
+	}{result1, result2, result3}
+}
+
 func (fake *FakeLoginActor) SetTarget(arg1 v3action.TargetSettings) (v3action.Warnings, error) {
 	fake.setTargetMutex.Lock()
 	ret, specificReturn := fake.setTargetReturnsOnCall[len(fake.setTargetArgsForCall)]
@@ -318,6 +390,8 @@ func (fake *FakeLoginActor) Invocations() map[string][][]interface{} {
 	defer fake.getLoginPromptsMutex.RUnlock()
 	fake.getOrganizationByNameMutex.RLock()
 	defer fake.getOrganizationByNameMutex.RUnlock()
+	fake.getOrganizationsMutex.RLock()
+	defer fake.getOrganizationsMutex.RUnlock()
 	fake.setTargetMutex.RLock()
 	defer fake.setTargetMutex.RUnlock()
 	copiedInvocations := map[string][][]interface{}{}

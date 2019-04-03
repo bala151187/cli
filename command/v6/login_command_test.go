@@ -729,13 +729,21 @@ var _ = Describe("login Command", func() {
 					cmd.APIEndpoint = "example.com"
 					cmd.Username = "some-user"
 					cmd.Password = "some-password"
+					fakeActor.GetOrganizationsReturns(
+						[]v3action.Organization{},
+						v3action.Warnings{"some-org-warning-1", "some-org-warning-2"},
+						nil,
+					)
 				})
 
 				It("fetches the available organizations", func() {
 					Expect(executeErr).ToNot(HaveOccurred())
+					Expect(fakeActor.GetOrganizationsCallCount()).To(Equal(1))
 				})
 
 				It("prints all warnings", func() {
+					Expect(testUI.Err).To(Say("some-org-warning-1"))
+					Expect(testUI.Err).To(Say("some-org-warning-2"))
 				})
 
 				When("fetching the organizations succeeds", func() {
@@ -751,13 +759,28 @@ var _ = Describe("login Command", func() {
 					})
 
 					When("only one org exists", func() {
+						BeforeEach(func() {
+							fakeActor.GetOrganizationsReturns(
+								[]v3action.Organization{v3action.Organization{
+									GUID: "some-org-guid",
+									Name: "some-org-name",
+								}},
+								v3action.Warnings{"some-org-warning-1", "some-org-warning-2"},
+								nil,
+							)
+						})
+
 						It("targets that org", func() {
 							Expect(executeErr).ToNot(HaveOccurred())
+							Expect(fakeConfig.SetOrganizationInformationCallCount()).To(Equal(1))
+							orgGUID, orgName := fakeConfig.SetOrganizationInformationArgsForCall(0)
+							Expect(orgGUID).To(Equal("some-org-guid"))
+							Expect(orgName).To(Equal("some-org-name"))
 						})
 					})
 
 					When("more than one org exists", func() {
-						It("targets that org", func() {
+						It("prompts the user to select an org", func() {
 							Expect(executeErr).ToNot(HaveOccurred())
 						})
 					})
@@ -765,7 +788,7 @@ var _ = Describe("login Command", func() {
 
 				When("fetching the organizations fails", func() {
 					It("returns the error", func() {
-						// Expect(executeErr).To(HaveOccurred())
+						Expect(executeErr).To(HaveOccurred())
 					})
 				})
 			})

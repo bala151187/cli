@@ -25,6 +25,7 @@ type LoginActor interface {
 	Authenticate(credentials map[string]string, origin string, grantType constant.GrantType) error
 	GetLoginPrompts() map[string]coreconfig.AuthPrompt
 	GetOrganizationByName(orgName string) (v3action.Organization, v3action.Warnings, error)
+	GetOrganizations() ([]v3action.Organization, v3action.Warnings, error)
 	SetTarget(settings v3action.TargetSettings) (v3action.Warnings, error)
 }
 
@@ -181,6 +182,10 @@ func (cmd *LoginCommand) Execute(args []string) error {
 	cmd.UI.DisplayWarnings(warnings)
 
 	cmd.Config.SetOrganizationInformation(org.GUID, org.Name)
+
+	_, warnings, _ = cmd.Actor.GetOrganizations()
+
+	cmd.UI.DisplayWarnings(warnings)
 
 	if err != nil {
 		return err

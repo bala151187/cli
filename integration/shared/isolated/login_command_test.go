@@ -438,7 +438,7 @@ var _ = Describe("login command", func() {
 		})
 	})
 
-	Describe("Target Organization", func() {
+	FDescribe("Target Organization", func() {
 		var (
 			orgName  string
 			username string
