@@ -177,20 +177,24 @@ func (cmd *LoginCommand) Execute(args []string) error {
 		return errors.New("Unable to authenticate.")
 	}
 
-	org, warnings, err := cmd.Actor.GetOrganizationByName(cmd.Organization)
+	if cmd.Organization != "" {
+		org, warnings, err := cmd.Actor.GetOrganizationByName(cmd.Organization)
+		cmd.UI.DisplayWarnings(warnings)
+		if err != nil {
+			return err
+		}
+		cmd.Config.SetOrganizationInformation(org.GUID, org.Name)
+	} else {
+		orgs, warnings, err := cmd.Actor.GetOrganizations()
+		cmd.UI.DisplayWarnings(warnings)
+		if err != nil {
+			return err
+		}
 
-	cmd.UI.DisplayWarnings(warnings)
-
-	cmd.Config.SetOrganizationInformation(org.GUID, org.Name)
-
-	_, warnings, _ = cmd.Actor.GetOrganizations()
-
-	cmd.UI.DisplayWarnings(warnings)
-
-	if err != nil {
-		return err
+		if len(orgs) == 1 {
+			cmd.Config.SetOrganizationInformation(orgs[0].GUID, orgs[0].Name)
+		}
 	}
-
 	err = cmd.checkMinCLIVersion()
 	if err != nil {
 		return err
@@ -378,14 +382,36 @@ func (cmd *LoginCommand) showStatus() {
 	user, err := cmd.Config.CurrentUserName()
 	if user == "" || err != nil {
 		cmd.UI.DisplayKeyValueTable("", tableContent, 3)
-		cmd.UI.DisplayText(
-			"Not logged in. Use '{{.CFLoginCommand}}' to log in.",
-			map[string]interface{}{"CFLoginCommand": fmt.Sprintf("%s login", cmd.Config.BinaryName())},
-		)
+		cmd.displayNotLoggedIn()
 		return
 	}
 	tableContent = append(tableContent, []string{cmd.UI.TranslateText("User:"), user})
 
+	orgName := cmd.Config.TargetedOrganizationName()
+	if orgName == "" {
+		cmd.UI.DisplayKeyValueTable("", tableContent, 3)
+		cmd.displayNotTargetted()
+		return
+	}
+	tableContent = append(tableContent, []string{cmd.UI.TranslateText("Org:"), orgName})
+
 	cmd.UI.DisplayKeyValueTable("", tableContent, 3)
 	cmd.UI.DisplayNewline()
+}
+
+func (cmd *LoginCommand) displayNotLoggedIn() {
+	cmd.UI.DisplayText(
+		"Not logged in. Use '{{.CFLoginCommand}}' to log in.",
+		map[string]interface{}{
+			"CFLoginCommand": fmt.Sprintf("%s login", cmd.Config.BinaryName()),
+		},
+	)
+}
+
+func (cmd *LoginCommand) displayNotTargetted() {
+	cmd.UI.DisplayText("No org or space targeted, use '{{.CFTargetCommand}} -o ORG -s SPACE'",
+		map[string]interface{}{
+			"CFTargetCommand": fmt.Sprintf("%s target", cmd.Config.BinaryName()),
+		},
+	)
 }

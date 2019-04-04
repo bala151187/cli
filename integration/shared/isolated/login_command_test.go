@@ -459,7 +459,7 @@ var _ = Describe("login command", func() {
 		})
 
 		When("there is only one org available to the user", func() {
-			FIt("logs the user in and targets the organization automatically", func() {
+			It("logs the user in and targets the organization automatically", func() {
 				session := helpers.CF("login", "-u", username, "-p", password, "-a", apiURL, "--skip-ssl-validation")
 				Eventually(session).Should(Exit(0))
 
@@ -582,7 +582,7 @@ var _ = Describe("login command", func() {
 			})
 		})
 
-		When("the -o flag is passed", func() {
+		FWhen("the -o flag is passed", func() {
 			BeforeEach(func() {
 				helpers.LogoutCF()
 			})
@@ -592,6 +592,7 @@ var _ = Describe("login command", func() {
 					session := helpers.CF("login", "-u", username, "-p", password, "-o", orgName)
 
 					Eventually(session).Should(Exit(0))
+					Eventually(session).Should(Say(`Org:\s+%s`, orgName))
 
 					targetSession := helpers.CF("target")
 					Eventually(targetSession).Should(Exit(0))
@@ -606,7 +607,7 @@ var _ = Describe("login command", func() {
 
 					Eventually(session).Should(Exit(1))
 					Eventually(session).Should(Say("FAILED"))
-					Eventually(session).Should(Say("Organization %s not found", orgName))
+					Eventually(session.Err).Should(Say("Organization '%s' not found", orgName))
 
 					targetSession := helpers.CF("target")
 					Eventually(targetSession).Should(Exit(0))
