@@ -480,11 +480,12 @@ var _ = Describe("login command", func() {
 				})
 
 				When("user selects an organization by using numbered list", func() {
-					It("prompt the user for org and target the selected org", func() {
+					It("prompts the user for org and target the selected org", func() {
 						input := NewBuffer()
 						_, err := input.Write([]byte("1\n"))
 						Expect(err).ToNot(HaveOccurred())
 						var session *Session
+						// TODO: do we still need this?
 						if skipSSLValidation {
 							session = helpers.CFWithStdin(input, "login", "-u", username, "-p", password, "-a", apiURL, "--skip-ssl-validation")
 						} else {
@@ -494,7 +495,9 @@ var _ = Describe("login command", func() {
 						Eventually(session).Should(Exit(0))
 
 						re := regexp.MustCompile("1\\. (?P<OrgName>.*)\n")
-						expectedOrgName := re.FindStringSubmatch(string(session.Out.Contents()))[1]
+						matches := re.FindStringSubmatch(string(session.Out.Contents()))
+						Expect(matches).To(HaveLen((2)))
+						expectedOrgName := matches[1]
 
 						targetSession := helpers.CF("target")
 						Eventually(targetSession).Should(Exit(0))
@@ -582,7 +585,7 @@ var _ = Describe("login command", func() {
 			})
 		})
 
-		FWhen("the -o flag is passed", func() {
+		When("the -o flag is passed", func() {
 			BeforeEach(func() {
 				helpers.LogoutCF()
 			})

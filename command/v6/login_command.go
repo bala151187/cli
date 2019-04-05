@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"net/url"
+	"strconv"
 	"strings"
 
 	"code.cloudfoundry.org/cli/api/uaa"
@@ -190,9 +191,15 @@ func (cmd *LoginCommand) Execute(args []string) error {
 		if err != nil {
 			return err
 		}
-
-		if len(orgs) == 1 {
+		switch {
+		case len(orgs) == 1:
 			cmd.Config.SetOrganizationInformation(orgs[0].GUID, orgs[0].Name)
+		case len(orgs) > 1:
+			chosenOrg := cmd.promptChosenOrg(orgs)
+			var emptyOrg v3action.Organization
+			if chosenOrg != emptyOrg {
+				cmd.Config.SetOrganizationInformation(chosenOrg.GUID, chosenOrg.Name)
+			}
 		}
 	}
 	err = cmd.checkMinCLIVersion()
@@ -414,4 +421,34 @@ func (cmd *LoginCommand) displayNotTargetted() {
 			"CFTargetCommand": fmt.Sprintf("%s target", cmd.Config.BinaryName()),
 		},
 	)
+}
+
+func (cmd *LoginCommand) promptChosenOrg(orgs []v3action.Organization) v3action.Organization {
+	cmd.UI.DisplayText("Select an org (or press enter to skip):")
+	for i, org := range orgs {
+		cmd.UI.DisplayText(fmt.Sprintf("%d. %s", i+1, org.Name))
+	}
+
+prompt:
+	chosenOrg, _ := cmd.UI.DisplayTextPrompt("Org:")
+	if chosenOrg == "" {
+		return v3action.Organization{}
+	}
+
+	index, err := strconv.Atoi(chosenOrg)
+	if err != nil {
+		for _, org := range orgs {
+			if org.Name == chosenOrg {
+				return org
+			}
+		}
+		return v3action.Organization{}
+	}
+
+	if index > len(orgs) {
+		// return v3action.Organization{}
+		goto prompt
+	}
+
+	return orgs[index-1]
 }

@@ -814,8 +814,85 @@ var _ = Describe("login Command", func() {
 					})
 
 					When("more than one org exists", func() {
+						BeforeEach(func() {
+							fakeActor.GetOrganizationsReturns(
+								[]v3action.Organization{
+									v3action.Organization{
+										GUID: "some-org-guid1",
+										Name: "some-org-name1",
+									},
+									v3action.Organization{
+										GUID: "some-org-guid2",
+										Name: "some-org-name2",
+									},
+									v3action.Organization{
+										GUID: "some-org-guid3",
+										Name: "1234",
+									},
+								},
+								v3action.Warnings{"some-org-warning-1", "some-org-warning-2"},
+								nil,
+							)
+						})
+
 						It("prompts the user to select an org", func() {
+							Expect(testUI.Out).To(Say("Select an org \\(or press enter to skip\\):"))
+							Expect(testUI.Out).To(Say("1. some-org-name1"))
+							Expect(testUI.Out).To(Say("2. some-org-name2"))
+							Expect(testUI.Out).To(Say("Org:"))
 							Expect(executeErr).ToNot(HaveOccurred())
+						})
+
+						When("the user selects an org by list position", func() {
+							BeforeEach(func() {
+								input.Write([]byte("2\n"))
+							})
+
+							It("targets that org", func() {
+								Expect(fakeConfig.SetOrganizationInformationCallCount()).To(Equal(1))
+								orgGUID, orgName := fakeConfig.SetOrganizationInformationArgsForCall(0)
+								Expect(orgGUID).To(Equal("some-org-guid2"))
+								Expect(orgName).To(Equal("some-org-name2"))
+							})
+						})
+
+						When("the user selects an org by name", func() {
+							BeforeEach(func() {
+								input.Write([]byte("some-org-name2\n"))
+							})
+
+							It("targets that org", func() {
+								Expect(fakeConfig.SetOrganizationInformationCallCount()).To(Equal(1))
+								orgGUID, orgName := fakeConfig.SetOrganizationInformationArgsForCall(0)
+								Expect(orgGUID).To(Equal("some-org-guid2"))
+								Expect(orgName).To(Equal("some-org-name2"))
+							})
+						})
+
+						When("the user selects an org by index out of bounds", func() {
+							BeforeEach(func() {
+								input.Write([]byte("4\n"))
+							})
+
+							It("It does not target an org", func() {
+								Expect(fakeConfig.SetOrganizationInformationCallCount()).To(Equal(0))
+							})
+
+							When("That index is the name of a different organization", func() {
+								It("targets that org", func() {
+
+								})
+							})
+						})
+
+						When("the user does not make a selection", func() {
+							BeforeEach(func() {
+								input.Write([]byte("\n"))
+							})
+
+							It("It does not target an org", func() {
+								Expect(fakeConfig.SetOrganizationInformationCallCount()).To(Equal(0))
+							})
 						})
 					})
 				})
