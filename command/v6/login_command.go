@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"net/url"
-	"strconv"
 	"strings"
 
 	"code.cloudfoundry.org/cli/api/uaa"
@@ -195,7 +194,10 @@ func (cmd *LoginCommand) Execute(args []string) error {
 		case len(orgs) == 1:
 			cmd.Config.SetOrganizationInformation(orgs[0].GUID, orgs[0].Name)
 		case len(orgs) > 1:
-			chosenOrg := cmd.promptChosenOrg(orgs)
+			chosenOrg, err := cmd.promptChosenOrg(orgs)
+			if err != nil {
+				return err
+			}
 			var emptyOrg v3action.Organization
 			if chosenOrg != emptyOrg {
 				cmd.Config.SetOrganizationInformation(chosenOrg.GUID, chosenOrg.Name)
@@ -423,32 +425,24 @@ func (cmd *LoginCommand) displayNotTargetted() {
 	)
 }
 
-func (cmd *LoginCommand) promptChosenOrg(orgs []v3action.Organization) v3action.Organization {
-	cmd.UI.DisplayText("Select an org (or press enter to skip):")
+func (cmd *LoginCommand) promptChosenOrg(orgs []v3action.Organization) (v3action.Organization, error) {
+	cmd.UI.DisplayText("Select an org:")
+
+	orgNames := make([]string, len(orgs))
 	for i, org := range orgs {
-		cmd.UI.DisplayText(fmt.Sprintf("%d. %s", i+1, org.Name))
+		orgNames[i] = org.Name
 	}
 
-prompt:
-	chosenOrg, _ := cmd.UI.DisplayTextPrompt("Org:")
-	if chosenOrg == "" {
-		return v3action.Organization{}
-	}
-
-	index, err := strconv.Atoi(chosenOrg)
+	chosenOrgName, err := cmd.UI.DisplayTextMenu(orgNames, "Org")
 	if err != nil {
-		for _, org := range orgs {
-			if org.Name == chosenOrg {
-				return org
-			}
+		return v3action.Organization{}, err
+	}
+
+	for _, org := range orgs {
+		if org.Name == chosenOrgName {
+			return org, nil
 		}
-		return v3action.Organization{}
 	}
 
-	if index > len(orgs) {
-		// return v3action.Organization{}
-		goto prompt
-	}
-
-	return orgs[index-1]
+	return v3action.Organization{}, errors.New("Error Choosing Organization")
 }
