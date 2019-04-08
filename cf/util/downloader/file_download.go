@@ -1,6 +1,7 @@
 package downloader
 
 import (
+	"crypto/tls"
 	"fmt"
 	"io"
 	"net/http"
@@ -30,6 +31,7 @@ func NewDownloader(saveDir string) Downloader {
 
 //this func returns byte written, filename and error
 func (d *downloader) DownloadFile(url string) (int64, string, error) {
+	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 	c := http.Client{
 		CheckRedirect: func(r *http.Request, via []*http.Request) error {
 			r.URL.Opaque = r.URL.Path
